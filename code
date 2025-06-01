@@ -1,0 +1,122 @@
+#include<bits/stdc++.h>
+using namespace std;
+ 
+typedef long long ll;
+
+#define fi first
+#define se second
+#define pii pair<int,int>
+#define pll pair<long long,long long>
+#define pb push_back
+#define debug(x) cerr<<#x<<"="<<x<<endl
+#define pq priority_queue
+#define inf 1ll<<60
+#define rep(i,a,b) for (ll i=a;i<(b);i++)
+#define MP make_pair
+#define SZ(x) (int(x.size()))
+#define mod 1000000007
+#define ALL(x) x.begin(),x.end()
+#define endl "\n"
+void inc(ll &a,ll b) {a=(a+b)%mod;}
+void dec(ll &a,ll b) {a=(a-b+mod)%mod;}
+int lowbit(ll x) {return x&(-x);}
+
+set<string>total_codes;//6 colours , 4 pegs
+double total_guess=0,average_guess=0;
+set<string>GetTotalCodes(){
+	set<string>s;
+	rep(i,1,7){
+		rep(j,1,7){
+			rep(k,1,7){
+				rep(l,1,7){
+					int x = l+k*10+j*100+i*1000;
+					s.insert(to_string(x));
+				}
+			}
+		}
+	}
+	return s;
+}
+
+string GetCode(set<string> &knuth_codes,set<string> &possible_codes){
+	string ret = *knuth_codes.begin();
+	return ret;
+}
+
+pair<int,int>GuessCode(string mastermind_code,string code){//{correct places, wrong places}
+	int cp=0,wp=0;
+	int matched[4];
+	memset(matched,0,sizeof matched);
+	//check for cp
+	rep(i,0,4){
+		if(mastermind_code[i]==code[i])matched[i]=1,cp++;
+	}
+	//check for wp
+	rep(i,0,4){
+		rep(j,0,4){
+			if(i==j)continue;
+			if(code[i] == mastermind_code[j] and !matched[j]){
+				matched[j]=1;
+				wp++;
+			}
+		}
+	}
+	return MP(cp,wp);
+}
+
+void PruneList(string last_guess, pair<int,int>feedback,set<string> &knuth_codes){
+	vector<string>to_be_deleted;
+	for(auto code:knuth_codes){
+		pair<int,int>retrieved_feedback=GuessCode(code,last_guess);
+		if(retrieved_feedback!=feedback){
+			to_be_deleted.pb(code);
+		}
+	}
+	for(auto code:to_be_deleted)knuth_codes.erase(code);
+}
+
+void mastermind(string mastermind_code){
+	set<string>knuth_codes,possible_codes;
+	//for(auto x:total_codes)cout<<x<<endl;
+	//debug(total_codes.size());
+	knuth_codes=total_codes;
+	possible_codes=total_codes;
+	//cin>>mastermind_code;
+	int cnt=0;
+	while(true){
+		cnt++;
+		string code = GetCode(knuth_codes,possible_codes);
+		pair<int,int>feedback = GuessCode(mastermind_code,code);
+		//debug(code);
+		//debug(feedback.fi);
+		//debug(feedback.se);
+		if(feedback==MP(4,0)){
+			cout<<"Code: "<<mastermind_code<<endl"Number of guesses used: "<<cnt<<endl;
+			cout<<"-----"<<endl;
+			total_guess+=cnt;
+			break;
+		}else{
+			//for(auto x:knuth_codes)debug(x);
+			PruneList(code,feedback,knuth_codes);
+		}
+		if(cnt>=10){
+			cout<<"Game Over, too many guesses used"<<endl;
+			exit(0);
+		}
+	}
+	
+}
+
+int main(){
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	total_codes=GetTotalCodes();
+	//auto x=GuessCode("4531","3414"); old bug, fixed
+	//debug(x.fi);
+	//debug(x.se);
+	for(auto mastermind_code:total_codes)mastermind(mastermind_code);
+	average_guess=total_guess/1296;
+	debug(average_guess);
+	return 0;
+}
+

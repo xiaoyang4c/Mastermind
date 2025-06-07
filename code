@@ -133,8 +133,8 @@ void mastermind(string mastermind_code){
 		cnt++;
 		string code = GetCode(knuth_codes,possible_codes);
 		pair<int,int>feedback = GuessCode(mastermind_code,code);
-		//debug(code);
-		//cerr<<"feedback: "<<feedback.fi<<" "<<feedback.se<<endl;
+		debug(code);
+		cerr<<"feedback: "<<feedback.fi<<" "<<feedback.se<<endl;
 		//debug(knuth_codes.size());
 		//debug(possible_codes.size());
 		if(feedback==MP(4,0)){
@@ -157,12 +157,14 @@ int main(){
 	//cin.tie(0);
 	total_codes=GetTotalCodes();
 	//auto tmp=GuessCode("1236","1231");debug(tmp.fi);debug(tmp.se);
-	//mastermind("1236");
-	for(auto mastermind_code:total_codes)mastermind(mastermind_code);
-	average_guess=total_guess/1296;
-	debug(average_guess);
-	debug(mx);
-	for(auto x: worst_case)cout<<x.fi<<" "<<x.se<<endl;
+	cout<<"Enter the mastermind code: "<<endl;
+	string x;cin>>x;
+	mastermind(x);
+	//for(auto mastermind_code:total_codes)mastermind(mastermind_code);
+	//average_guess=total_guess/1296;
+	//debug(average_guess);
+	//debug(mx);
+	//for(auto x: worst_case)cout<<x.fi<<" "<<x.se<<endl;
 	return 0;
 }
 

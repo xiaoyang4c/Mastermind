@@ -23,6 +23,13 @@ int lowbit(ll x) {return x&(-x);}
 
 set<string>total_codes;//6 colours , 4 pegs
 double total_guess=0,average_guess=0;
+int mx=0;
+
+//Knuth codes are codes that may still be secret code, given guesses and feedback so far
+//Possible codes are codes that have not been guessed yet
+//total codes are total amount of possible codes
+//guess codes are the current possible codes with the lowest minimax value 
+
 set<string>GetTotalCodes(){
 	set<string>s;
 	rep(i,1,7){
@@ -38,26 +45,34 @@ set<string>GetTotalCodes(){
 	return s;
 }
 
-string GetCode(set<string> &knuth_codes,set<string> &possible_codes){
-	string ret = *knuth_codes.begin();
-	return ret;
+string GetGuessCodeFromList(set<string> &knuth_codes, set<string> &guess_codes){
+	for(auto code:guess_codes){
+		if(knuth_codes.find(code)!=knuth_codes.end())return code;
+	}
+	return *guess_codes.begin();
 }
 
-pair<int,int>GuessCode(string mastermind_code,string code){//{correct places, wrong places}
+//why th this function so buggy bruh
+pair<int,int> GuessCode(string mastermind_code,string code){//{correct places, wrong places}
 	int cp=0,wp=0;
-	int matched[4];
-	memset(matched,0,sizeof matched);
+	int matched_cp[4],matched_wp[4];
+	memset(matched_cp,0,sizeof matched_cp);
+	memset(matched_wp,0,sizeof matched_wp);
 	//check for cp
 	rep(i,0,4){
-		if(mastermind_code[i]==code[i])matched[i]=1,cp++;
+		if(mastermind_code[i]==code[i])matched_cp[i]=1,cp++;
 	}
 	//check for wp
 	rep(i,0,4){
-		rep(j,0,4){
-			if(i==j)continue;
-			if(code[i] == mastermind_code[j] and !matched[j]){
-				matched[j]=1;
-				wp++;
+		if(!matched_cp[i]){
+			rep(j,0,4){
+				//debug(mastermind_code[i]);
+				//debug(code[j]);
+				if(!matched_wp[j] and !matched_cp[j] and mastermind_code[i]==code[j]){
+					matched_wp[j]=1;
+					wp++;
+					break;//you dont need to match with any more of the same digits alr
+				}
 			}
 		}
 	}
@@ -75,48 +90,79 @@ void PruneList(string last_guess, pair<int,int>feedback,set<string> &knuth_codes
 	for(auto code:to_be_deleted)knuth_codes.erase(code);
 }
 
+set<string>MiniMax(set<string> &knuth_codes,set<string> &possible_codes){
+	set<string>guess_codes;
+
+	map<string,int>score;
+	for(auto code:possible_codes){
+		map<pair<int,int>,int>times_found;//note that this map must be declared here
+		for(auto code_to_crack:knuth_codes){
+			pair<int,int>feedback = GuessCode(code,code_to_crack);
+			times_found[feedback]++;
+		}
+		int maximum=0;
+		for(auto x:times_found)maximum=max(x.se,maximum);
+		score[code]=maximum;
+	}
+	int minimum=1e9;
+	for(auto x:score)minimum=min(x.se,minimum);
+	for(auto code:possible_codes){
+		if(score[code]==minimum){
+			guess_codes.insert(code);
+		}
+	}
+	return guess_codes;
+}
+
+string GetCode(set<string> &knuth_codes,set<string> &possible_codes){
+	set<string>guess_codes=MiniMax(knuth_codes,possible_codes);
+	string code=GetGuessCodeFromList(knuth_codes,guess_codes);
+	possible_codes.erase(code);
+	return code;
+}
+
+vector<pair<string,int>>worst_case;
 void mastermind(string mastermind_code){
 	set<string>knuth_codes,possible_codes;
 	//for(auto x:total_codes)cout<<x<<endl;
 	//debug(total_codes.size());
 	knuth_codes=total_codes;
 	possible_codes=total_codes;
-	//cin>>mastermind_code;
 	int cnt=0;
 	while(true){
 		cnt++;
 		string code = GetCode(knuth_codes,possible_codes);
 		pair<int,int>feedback = GuessCode(mastermind_code,code);
 		//debug(code);
-		//debug(feedback.fi);
-		//debug(feedback.se);
+		//cerr<<"feedback: "<<feedback.fi<<" "<<feedback.se<<endl;
+		//debug(knuth_codes.size());
+		//debug(possible_codes.size());
 		if(feedback==MP(4,0)){
 			cout<<"Code: "<<mastermind_code<<endl"Number of guesses used: "<<cnt<<endl;
 			cout<<"-----"<<endl;
 			total_guess+=cnt;
+			mx=max(cnt,mx);
+			if(cnt>=6)worst_case.pb(MP(code,cnt));
 			break;
 		}else{
 			//for(auto x:knuth_codes)debug(x);
 			PruneList(code,feedback,knuth_codes);
-		}
-		if(cnt>=10){
-			cout<<"Game Over, too many guesses used"<<endl;
-			exit(0);
 		}
 	}
 	
 }
 
 int main(){
-	ios::sync_with_stdio(0);
-	cin.tie(0);
+	//ios::sync_with_stdio(0);
+	//cin.tie(0);
 	total_codes=GetTotalCodes();
-	//auto x=GuessCode("4531","3414"); old bug, fixed
-	//debug(x.fi);
-	//debug(x.se);
+	//auto tmp=GuessCode("1236","1231");debug(tmp.fi);debug(tmp.se);
+	//mastermind("1236");
 	for(auto mastermind_code:total_codes)mastermind(mastermind_code);
 	average_guess=total_guess/1296;
 	debug(average_guess);
+	debug(mx);
+	for(auto x: worst_case)cout<<x.fi<<" "<<x.se<<endl;
 	return 0;
 }
 
